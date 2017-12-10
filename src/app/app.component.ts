@@ -1,29 +1,44 @@
 import { Component } from '@angular/core';
 import { Rect } from './shared/model/service/rect';
 import { Text } from './shared/model/service/text';
-import { Method } from './shared/model/service/method';
-import { Diagram } from './shared/model/controller/diagram';
 import { Service } from './shared/service';
-import { OnInit } from '@angular/core';
-import { Observable } from 'rxjs/Rx';
+
 
 @Component({
-    selector: 'app-root',
-    templateUrl: 'app.component.html',
-    styleUrls: ['app.component.css']
+  selector: 'app-root',
+  templateUrl: 'app.component.html',
+  styleUrls: ['app.component.css']
 })
 
-export class AppComponent{
-  rects: Array<Rect>;
-  texts: Array<Text>;
-  borders: Array<Rect>;
+export class AppComponent {
+  private methods: Array<Rect>;
+  private texts: Array<Text>;
+  private choose: Array<Rect> = [];
 
-constructor (private service:Service){
-  let diagram = service.get();
-  this.rects = diagram.methods;
-  this.texts = diagram.texts;
-  this.borders = diagram.borders;
-}
+  constructor(private service: Service) {
+    this.update();
+  }
 
+  private update() {
+    const diagram = this.service.getSimple();
+    if (diagram != null) {
+      this.methods = diagram.methods;
+      this.texts = diagram.texts;
+    }
+  }
 
+  public getHeight(): number {
+    return  this.methods.length * 15 + 100;
+  }
+
+  public getWidth(): number {
+    return (this.methods[this.methods.length - 2]).x + 2000;
+  }
+
+  toggle(rect: Rect) {
+    this.choose.push(rect);
+    const diagram = this.service.getWithParameter(this.choose);
+    this.methods = diagram.methods;
+    this.texts = diagram.texts;
+  }
 }

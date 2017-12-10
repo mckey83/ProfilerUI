@@ -1,5 +1,5 @@
-<svg viewBox="0 0 900 500" preserveAspectRatio="xMidYMid meet" >
-  <rect id="rect" *ngFor = "let rect of rects" [attr.x]="rect.x" [attr.y]="rect.y" [attr.width]="rect.width" [attr.height]="rect.height"/>
-  <text id="text" *ngFor = "let text of texts" [attr.x]="text.x" [attr.y]="text.y" >{{text.className}}.{{text.methodName}}() - {{text.duration}} ms</text>
-  <rect id="rect" *ngFor = "let border of borders" [attr.x]="border.x" [attr.y]="border.y" [attr.width]="border.width" [attr.height]="border.height"/>
+<svg [style.width]="getWidth()" [style.height]="getHeight()" preserveAspectRatio="none" *ngIf="methods.length">
+  <rect class="rect" *ngFor = "let method of methods"  [attr.fill]="method.color" [attr.x]="method.x" [attr.y]="method.y" [attr.width]="method.width" [attr.height]="method.height" (click)="toggle(method)"><title>{{method.stack}}</title></rect>
+  <text class="text" *ngFor = "let text of texts" [style.fill]="text.textColor" [attr.x]="text.x" [attr.y]="text.y">&nbsp; &nbsp; &nbsp; | start time:{{text.startTime}} s | {{text.className}}.{{text.methodName}}  | duration {{text.duration}} s | finish {{text.startTime+text.duration}} s | threadId {{text.threadId}} | {{text.threadName}} | {{text.path}}</text>
 </svg>
+
