@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { Rect } from './shared/model/service/rect';
 import { Text } from './shared/model/service/text';
 import { Service } from './shared/service';
@@ -10,16 +10,16 @@ import { Service } from './shared/service';
   styleUrls: ['app.component.css']
 })
 
-export class AppComponent {
+export class AppComponent implements  OnInit {
+
+
   private methods: Array<Rect>;
   private texts: Array<Text>;
   private choose: Array<Rect> = [];
 
-  constructor(private service: Service) {
-    this.update();
-  }
+  constructor(private service: Service) { }
 
-  private update() {
+  ngOnInit(): void {
     const diagram = this.service.getSimple();
     if (diagram != null) {
       this.methods = diagram.methods;

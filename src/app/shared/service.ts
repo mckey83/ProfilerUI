@@ -3,7 +3,7 @@ import { Text } from './model/service/text';
 import { ModelRepository } from './model/repository/model-repository';
 import { Diagram } from './model/service/diagram';
 import { Repository } from './repository/repository';
-import { Injectable } from '@angular/core';
+import {Injectable, OnInit} from '@angular/core';
 import { MethodRepository } from './model/repository/method-repository';
 import { Observable } from 'rxjs/Observable';
 import {Filter} from './model/service/Filter';
@@ -17,23 +17,28 @@ export class Service {
   private Y = 0;
   private X = 0;
   private NS_TO_COORDINATE_RATIO = 10000000;
-  private modelRepository: Observable<ModelRepository>;
+  private modelRepository: ModelRepository;
 
   constructor (private repository: Repository) {
-    this.modelRepository = this.repository.getData();
+
   }
 
   public updateInit(): void {
+    this.modelRepository = this.repository.getModel();
+    while (this.modelRepository == null ) {
+      setTimeout(() => { }, 10000);
+    }
+
+    console.log(this.modelRepository.method[0]);
+
     const rects = new Array<Rect>();
     const texts = new Array<Text>();
-    this.modelRepository.subscribe(modelRepository => {
-      for (const res of modelRepository.method) {
-        if (res.duration > this.NS_TO_COORDINATE_RATIO) {
-          this.setCoordinate(res);
-          const rect = this.createRect(res);
-          rects.push(rect);
-          texts.push(this.createTexts(res, rect));
-        }
+    this.modelRepository.method.forEach(res => {
+      if (res.duration > this.NS_TO_COORDINATE_RATIO) {
+        this.setCoordinate(res);
+        const rect = this.createRect(res);
+        rects.push(rect);
+        texts.push(this.createTexts(res, rect));
       }
     });
     this.diagram = new Diagram(rects, texts);
@@ -42,26 +47,24 @@ export class Service {
   public update(choose: Array<Rect>): void {
     const rects = new Array<Rect>();
     const texts = new Array<Text>();
-    this.modelRepository.subscribe(modelRepository => {
-      const filters = [];
-      if (choose.length > 0) {
-        choose.forEach( res => {
-          const finded = modelRepository.method.find(x => x.id === res.id);
-          const start = finded.startTime;
-          const finish = finded.startTime + finded.duration;
-          const threadId = finded.threadId;
-          filters.push(new Filter(start, finish, threadId));
-        });
+    const filters = [];
+    if (choose.length > 0) {
+      choose.forEach( res => {
+        const finded = this.modelRepository.method.find(x => x.id === res.id);
+        const start = finded.startTime;
+        const finish = finded.startTime + finded.duration;
+        const threadId = finded.threadId;
+        filters.push(new Filter(start, finish, threadId));
+      });
+    }
+    for (const res of this.modelRepository.method) {
+      if (this.notInFilter(res, filters)) {
+        this.setCoordinate(res);
+        const rect = this.createRect(res);
+        rects.push(rect);
+        texts.push(this.createTexts(res, rect));
       }
-      for (const res of modelRepository.method) {
-        if (this.notInFilter(res, filters)) {
-          this.setCoordinate(res);
-          const rect = this.createRect(res);
-          rects.push(rect);
-          texts.push(this.createTexts(res, rect));
-        }
-      }
-    });
+    }
     this.diagram = new Diagram(rects, texts);
   }
 
