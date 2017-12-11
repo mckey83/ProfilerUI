@@ -12,43 +12,15 @@ import {Description} from '../model/repository/description';
 @Injectable()
 export class Repository {
 
-  private modelRepository: ModelRepository;
+  private modelRepository: Observable<ModelRepository>;
 
   private result: ModelRepository;
 
   constructor(private http: Http) {
-    this.createModel();
-    console.log(this.modelRepository);
+    this.modelRepository = this.http.get('http://localhost:4200/assets/file.json').map(res => res.json());
   }
 
   public getData(): Observable<ModelRepository> {
-    return this.http.get('http://localhost:4200/assets/file.json').map(res => res.json());
-  }
-
-  public getModel(): ModelRepository {
     return this.modelRepository;
   }
-
-  private createModel(): void {
-    const methodRepository: Array<MethodRepository> = [];
-    this.getData().subscribe(modelRepository => {
-      modelRepository.method.forEach(res => {
-        methodRepository.push(new MethodRepository(
-          res.id,
-          res.className,
-          res.methodName,
-          res.duration,
-          res.threadId,
-          res.threadName,
-          res.stack,
-          res.startTime,
-          res.path,
-          res.color
-        ));
-      });
-    });
-    this.modelRepository = new ModelRepository(methodRepository, new Description());
-  }
-
-
 }

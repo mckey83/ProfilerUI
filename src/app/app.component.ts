@@ -20,11 +20,7 @@ export class AppComponent {
   }
 
   private update() {
-    const diagram = this.service.getSimple();
-    if (diagram != null) {
-      this.methods = diagram.methods;
-      this.texts = diagram.texts;
-    }
+    this.setView([]);
   }
 
   public getHeight(): number {
@@ -36,8 +32,26 @@ export class AppComponent {
   }
 
   toggle(rect: Rect) {
-    this.choose.push(rect);
-    const diagram = this.service.getWithParameter(this.choose);
+    const isContain = this.choose.find( res => {
+        return res.id === rect.id;
+      }
+    );
+    if (isContain) {
+      for (let i = 0; i < this.choose.length; i++) {
+        if (this.choose[i].id === rect.id) {
+          const removed = this.choose.filter(item => item.id !== rect.id );
+          this.choose = removed;
+          this.setView(this.choose);
+        }
+      }
+    } else {
+      this.choose.push(rect);
+      this.setView(this.choose);
+    }
+  }
+
+  private setView(filter: Rect[]) {
+    const diagram = this.service.getWithParameter(filter);
     this.methods = diagram.methods;
     this.texts = diagram.texts;
   }

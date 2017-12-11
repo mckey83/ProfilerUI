@@ -23,23 +23,13 @@ export class Service {
     this.modelRepository = this.repository.getData();
   }
 
-  public updateInit(): void {
-    const rects = new Array<Rect>();
-    const texts = new Array<Text>();
-    this.modelRepository.subscribe(modelRepository => {
-      for (const res of modelRepository.method) {
-        if (res.duration > this.NS_TO_COORDINATE_RATIO) {
-          this.setCoordinate(res);
-          const rect = this.createRect(res);
-          rects.push(rect);
-          texts.push(this.createTexts(res, rect));
-        }
-      }
-    });
-    this.diagram = new Diagram(rects, texts);
+  public getWithParameter(choose: Array<Rect>): Diagram {
+    this.Y = 0;
+    this.update(choose);
+    return this.diagram;
   }
 
-  public update(choose: Array<Rect>): void {
+  private update(choose: Array<Rect>): void {
     const rects = new Array<Rect>();
     const texts = new Array<Text>();
     this.modelRepository.subscribe(modelRepository => {
@@ -53,48 +43,37 @@ export class Service {
           filters.push(new Filter(start, finish, threadId));
         });
       }
-      for (const res of modelRepository.method) {
-        if (this.notInFilter(res, filters)) {
-          this.setCoordinate(res);
-          const rect = this.createRect(res);
-          rects.push(rect);
-          texts.push(this.createTexts(res, rect));
-        }
-      }
+      this.computeDataForDiagram(modelRepository, filters, rects, texts);
     });
     this.diagram = new Diagram(rects, texts);
   }
 
-  public getSimple(): Diagram {
-    this.Y = 0;
-    this.updateInit();
-    return this.diagram;
-  }
-
-  public getWithParameter(choose: Array<Rect>): Diagram {
-    this.Y = 0;
-    this.update(choose);
-    return this.diagram;
+  private computeDataForDiagram(modelRepository, filters: Array<Filter>, rects: Rect[], texts: Text[]) {
+    for (const res of modelRepository.method) {
+      if (this.notInFilter(res, filters)) {
+        this.setCoordinate(res);
+        const rect = this.createRect(res);
+        rects.push(rect);
+        texts.push(this.createTexts(res, rect));
+      }
+    }
   }
 
   private notInFilter(method: MethodRepository, filters: Filter[]): boolean {
-
-    if (filters.length > 0) {
-      let result = true;
-      filters.forEach(filter => {
-        if (method.startTime > filter.start &&
-          (method.startTime + method.duration) < filter.finish &&
-          method.threadId === filter.threadId &&
-          method.duration > this.NS_TO_COORDINATE_RATIO
-        ) {
-          console.log(method.threadId);
-          result = false;
-        }
-      });
-      return result;
-    } else {
-      return method.duration > this.NS_TO_COORDINATE_RATIO;
+    if ( method.duration < this.NS_TO_COORDINATE_RATIO * 10) {
+      return false;
     }
+    if (filters.length < 0) {
+      return true;
+    }
+    let result = true;
+    filters.forEach(filter => {
+      if (method.startTime > filter.start &&
+        (method.startTime + method.duration) < filter.finish &&
+        method.threadId === filter.threadId
+      ) { result = false; }
+    });
+    return result;
   }
 
 
@@ -119,7 +98,8 @@ export class Service {
   private createTexts(method: MethodRepository, rect: Rect): Text {
     const x = this.X + this.getWidth(method.duration) + 5;
     const y = this.Y + 8;
-    const startTime = method.startTime;
+    const startTime = method.startTime / (this.NS_TO_COORDINATE_RATIO * 100);
+    const duration = method.duration / (this.NS_TO_COORDINATE_RATIO * 100);
     const textColor = rect.stack.length > 1 ? 'black' : 'red';
     return new Text(
       method.id,
@@ -127,10 +107,10 @@ export class Service {
       y,
       method.className,
       method.methodName,
-      method.duration / this.NS_TO_COORDINATE_RATIO,
+      duration,
       method.threadId,
       method.threadName,
-      startTime / this.NS_TO_COORDINATE_RATIO,
+      startTime ,
       textColor,
       method.path
     );
