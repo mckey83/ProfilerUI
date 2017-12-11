@@ -1,5 +1,5 @@
 <svg [style.width]="getWidth()" [style.height]="getHeight()" preserveAspectRatio="none" *ngIf="methods.length">
-  <rect class="rect" *ngFor = "let method of methods" [attr.stroke]="method.color"  [attr.fill]="method.color" [attr.x]="method.x" [attr.y]="method.y" [attr.width]="method.width" [attr.height]="method.height" (click)="toggle(method)"><title>{{method.stack}}</title></rect>
-  <text class="text" *ngFor = "let text of texts" [style.fill]="text.textColor" [attr.x]="text.x" [attr.y]="text.y">&nbsp; &nbsp; &nbsp; | start time:{{text.startTime}} s | {{text.className}}.{{text.methodName}}  | duration {{text.duration}} s | finish {{text.startTime+text.duration}} s | threadId {{text.threadId}} | {{text.threadName}} | {{text.path}}</text>
+  <rect class="rect" *ngFor = "let method of methods"   [attr.fill]="method.color" [attr.x]="method.x" [attr.y]="method.y" [attr.width]="method.width" [attr.height]="method.height" (click)="toggle($event,method)"><title>{{method.stack}}</title></rect>
+  <text class="text" *ngFor = "let text of texts" [style.fill]="text.textColor" [attr.x]="text.x" [attr.y]="text.y">&nbsp; {{text.isChoosed}} &nbsp; | start time:{{text.startTime}} s | {{text.className}}.{{text.methodName}}  | duration {{text.duration}} s | finish {{text.startTime+text.duration}} s | threadId {{text.threadId}} | {{text.threadName}} | {{text.path}}</text>
 </svg>
 

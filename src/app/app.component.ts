@@ -31,7 +31,8 @@ export class AppComponent {
     return (this.methods[this.methods.length - 2]).x + 2000;
   }
 
-  toggle(rect: Rect) {
+  toggle(event: Event, rect: Rect) {
+    event.preventDefault();
     const isContain = this.choose.find( res => {
         return res.id === rect.id;
       }

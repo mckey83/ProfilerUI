@@ -10,6 +10,7 @@ export class Text {
               public threadName: String,
               public startTime: number,
               public textColor: String,
-              public path: String
+              public path: String,
+              public isChoosed
               ) {}
 }

@@ -40,7 +40,7 @@ export class Service {
           const start = finded.startTime;
           const finish = finded.startTime + finded.duration;
           const threadId = finded.threadId;
-          filters.push(new Filter(start, finish, threadId));
+          filters.push(new Filter(start, finish, threadId, res.id));
         });
       }
       this.computeDataForDiagram(modelRepository, filters, rects, texts);
@@ -54,7 +54,15 @@ export class Service {
         this.setCoordinate(res);
         const rect = this.createRect(res);
         rects.push(rect);
-        texts.push(this.createTexts(res, rect));
+        let isFind = false;
+        for (const current of filters){
+          if (res.id === current.parentId) {
+            isFind = true; break;
+          }
+        }
+        if (isFind) { console.log(res.id); }
+
+        texts.push(this.createTexts(res, rect, isFind));
       }
     }
   }
@@ -76,7 +84,6 @@ export class Service {
     return result;
   }
 
-
   private setCoordinate (res: MethodRepository) {
     this.X = res.startTime / this.NS_TO_COORDINATE_RATIO;
     this.Y += this.Y_SHIFT;
@@ -95,12 +102,13 @@ export class Service {
     return new Rect(method.id, this.X, this.Y, width, this.Y_HEIGHT, color, resultStack);
   }
 
-  private createTexts(method: MethodRepository, rect: Rect): Text {
+  private createTexts(method: MethodRepository, rect: Rect, isFind: boolean): Text {
     const x = this.X + this.getWidth(method.duration) + 5;
     const y = this.Y + 8;
     const startTime = method.startTime / (this.NS_TO_COORDINATE_RATIO * 100);
     const duration = method.duration / (this.NS_TO_COORDINATE_RATIO * 100);
     const textColor = rect.stack.length > 1 ? 'black' : 'red';
+    const isChoosed = isFind === true ?  '+++' : '---';
     return new Text(
       method.id,
       x,
@@ -112,7 +120,8 @@ export class Service {
       method.threadName,
       startTime ,
       textColor,
-      method.path
+      method.path,
+      isChoosed
     );
   }
 
