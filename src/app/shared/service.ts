@@ -16,7 +16,7 @@ export class Service {
   private Y_HEIGHT = 10;
   private Y = 0;
   private X = 0;
-  private NS_TO_COORDINATE_RATIO = 10000000;
+  private NS_TO_COORDINATE_RATIO = 10000000000;
   private modelRepository: Observable<ModelRepository>;
 
   constructor (private repository: Repository) {
@@ -32,18 +32,20 @@ export class Service {
   private update(choose: Array<Rect>): void {
     const rects = new Array<Rect>();
     const texts = new Array<Text>();
-    this.modelRepository.subscribe(modelRepository => {
+    this.modelRepository
+      .map(res => res.method)
+      .subscribe(method => {
       const filters = [];
       if (choose.length > 0) {
         choose.forEach( res => {
-          const finded = modelRepository.method.find(x => x.id === res.id);
+          const finded = method.find(x => x.id === res.id);
           const start = finded.startTime;
           const finish = finded.startTime + finded.duration;
           const threadId = finded.threadId;
           filters.push(new Filter(start, finish, threadId, res.id));
         });
       }
-      this.computeDataForDiagram(modelRepository, filters, rects, texts);
+      this.computeDataForDiagram(method, filters, rects, texts);
     });
     this.diagram = new Diagram(rects, texts);
   }
@@ -51,7 +53,8 @@ export class Service {
   private computeDataForDiagram(modelRepository, filters: Array<Filter>, rects: Rect[], texts: Text[]) {
     for (const res of modelRepository.method) {
       if (this.notInFilter(res, filters)) {
-        this.setCoordinate(res);
+        this.setX(res);
+        this.setY();
         const rect = this.createRect(res);
         rects.push(rect);
         let isFind = false;
@@ -68,25 +71,17 @@ export class Service {
   }
 
   private notInFilter(method: MethodRepository, filters: Filter[]): boolean {
-    if ( method.duration < this.NS_TO_COORDINATE_RATIO * 10) {
-      return false;
-    }
-    if (filters.length < 0) {
+    if (filters.length < 1) {
       return true;
     }
     let result = true;
     filters.forEach(filter => {
       if (method.startTime > filter.start &&
-        (method.startTime + method.duration) < filter.finish &&
+        (method.startTime + method.duration) <= filter.finish &&
         method.threadId === filter.threadId
       ) { result = false; }
     });
     return result;
-  }
-
-  private setCoordinate (res: MethodRepository) {
-    this.X = res.startTime / this.NS_TO_COORDINATE_RATIO;
-    this.Y += this.Y_SHIFT;
   }
 
   private createRect(method: MethodRepository): Rect {
@@ -105,9 +100,9 @@ export class Service {
   private createTexts(method: MethodRepository, rect: Rect, isFind: boolean): Text {
     const x = this.X + this.getWidth(method.duration) + 5;
     const y = this.Y + 8;
-    const startTime = method.startTime / (this.NS_TO_COORDINATE_RATIO * 100);
-    const duration = method.duration / (this.NS_TO_COORDINATE_RATIO * 100);
-    const textColor = rect.stack.length > 1 ? 'black' : 'red';
+    const startTime = method.startTime / (this.NS_TO_COORDINATE_RATIO);
+    const duration = method.duration / (this.NS_TO_COORDINATE_RATIO);
+    const textColor = 'black';
     const isChoosed = isFind === true ?  '+++' : '---';
     return new Text(
       method.id,
@@ -163,8 +158,16 @@ export class Service {
     return stack.indexOf('com.bmc') === -1;
   }
 
+  private setY() {
+    this.Y += this.Y_SHIFT;
+  }
+
+  private setX(res: MethodRepository) {
+    this.X = res.startTime * 100 / this.NS_TO_COORDINATE_RATIO;
+  }
+
   private getWidth(duration: number): number {
-    const width = duration / this.NS_TO_COORDINATE_RATIO;
+    const width = duration * 100 / this.NS_TO_COORDINATE_RATIO;
     return width < 10 ? 10 : width;
   }
 }

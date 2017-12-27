@@ -55,5 +55,6 @@ export class AppComponent {
     const diagram = this.service.getWithParameter(filter);
     this.methods = diagram.methods;
     this.texts = diagram.texts;
+    console.log(this.methods.length);
   }
 }
