@@ -23,35 +23,34 @@ export class Service {
     this.modelRepository = this.repository.getData();
   }
 
-  public getWithParameter(choose: Array<Rect>): Diagram {
+  public getWithParameter(choose: Array<Rect>): Observable<Diagram> {
     this.Y = 0;
-    this.update(choose);
-    return this.diagram;
+    return this.update(choose);
   }
 
-  private update(choose: Array<Rect>): void {
+  private update(choose: Array<Rect>): Observable<Diagram> {
+    return this.modelRepository
+      .map(res => res.method)
+      .map(methods => {
+        const filters = [];
+        if (choose.length > 0) {
+          choose.forEach( res => {
+            const finded = methods.find(x => x.id === res.id);
+            const start = finded.startTime;
+            const finish = finded.startTime + finded.duration;
+            const threadId = finded.threadId;
+            filters.push(new Filter(start, finish, threadId, res.id));
+          });
+        }
+          return this.computeDataForDiagram(methods, filters);
+        }
+    );
+  }
+
+  public computeDataForDiagram(methods: MethodRepository[], filters: Array<Filter>): Diagram {
     const rects = new Array<Rect>();
     const texts = new Array<Text>();
-    this.modelRepository
-      .map(res => res.method)
-      .subscribe(method => {
-      const filters = [];
-      if (choose.length > 0) {
-        choose.forEach( res => {
-          const finded = method.find(x => x.id === res.id);
-          const start = finded.startTime;
-          const finish = finded.startTime + finded.duration;
-          const threadId = finded.threadId;
-          filters.push(new Filter(start, finish, threadId, res.id));
-        });
-      }
-      this.computeDataForDiagram(method, filters, rects, texts);
-    });
-    this.diagram = new Diagram(rects, texts);
-  }
-
-  private computeDataForDiagram(modelRepository, filters: Array<Filter>, rects: Rect[], texts: Text[]) {
-    for (const res of modelRepository.method) {
+    for (const res of methods) {
       if (this.notInFilter(res, filters)) {
         this.setX(res);
         this.setY();
@@ -60,14 +59,14 @@ export class Service {
         let isFind = false;
         for (const current of filters){
           if (res.id === current.parentId) {
-            isFind = true; break;
+            isFind = true;
+            break;
           }
         }
-        if (isFind) { console.log(res.id); }
-
         texts.push(this.createTexts(res, rect, isFind));
       }
     }
+    return new Diagram(rects, texts);
   }
 
   private notInFilter(method: MethodRepository, filters: Filter[]): boolean {

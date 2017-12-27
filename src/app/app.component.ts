@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { Rect } from './shared/model/service/rect';
 import { Text } from './shared/model/service/text';
 import { Service } from './shared/service';
+import {Observable} from 'rxjs/Observable';
+import { Diagram } from './shared/model/service/diagram';
 
 
 @Component({
@@ -11,8 +13,8 @@ import { Service } from './shared/service';
 })
 
 export class AppComponent {
-  private methods: Array<Rect>;
-  private texts: Array<Text>;
+  private methods: Array<Rect> = [];
+  private texts: Array<Text> = [];
   private choose: Array<Rect> = [];
 
   constructor(private service: Service) {
@@ -52,9 +54,10 @@ export class AppComponent {
   }
 
   private setView(filter: Rect[]) {
-    const diagram = this.service.getWithParameter(filter);
-    this.methods = diagram.methods;
-    this.texts = diagram.texts;
-    console.log(this.methods.length);
+    this.service.getWithParameter(filter).subscribe( diagram => {
+        this.methods = diagram.methods;
+        this.texts = diagram.texts;
+      }
+    );
   }
 }
