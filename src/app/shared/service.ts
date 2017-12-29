@@ -32,91 +32,71 @@ export class Service {
     return this.modelRepository
       .map(res => res.method)
       .map(methods => {
-        const filters = [];
-        if (choose.length > 0) {
-          choose.forEach( res => {
-            const finded = methods.find(x => x.id === res.id);
-            const start = finded.startTime;
-            const finish = finded.startTime + finded.duration;
-            const threadId = finded.threadId;
-            filters.push(new Filter(start, finish, threadId, res.id));
-          });
-        }
+          const filters = this.getFilters(choose, methods);
           return this.computeDataForDiagram(methods, filters);
         }
-    );
+      );
+  }
+
+  public getFilters(choose: Array<Rect>, methods) {
+    const filters = [];
+      choose.forEach( res => {
+        const found = methods.find(x => x.id === res.id);
+        const start = found.startTime;
+        const finish = found.startTime + found.duration;
+        const threadId = found.threadId;
+        filters.push(new Filter(start, finish, threadId, res.id));
+      });
+    return filters;
   }
 
   public computeDataForDiagram(methods: MethodRepository[], filters: Array<Filter>): Diagram {
     const rects = new Array<Rect>();
     const texts = new Array<Text>();
-    for (const res of methods) {
-      if (this.notInFilter(res, filters)) {
-        this.setX(res);
-        this.setY();
-        const rect = this.createRect(res);
-        rects.push(rect);
-        let isFind = false;
-        for (const current of filters){
-          if (res.id === current.parentId) {
-            isFind = true;
-            break;
-          }
+    methods.filter(method => this.notInFilter(method, filters))
+           .forEach(method => {
+              this.setX(method);
+              this.setY();
+              rects.push(this.createRect(method));
+              texts.push(this.addText(filters, method));
         }
-        texts.push(this.createTexts(res, rect, isFind));
-      }
-    }
+      );
     return new Diagram(rects, texts);
   }
 
+  private addText(filters: Array<Filter>, res) {
+    let isFind = false;
+    filters.filter(current => res.id === current.parentId)
+           .map(() => isFind = true);
+    return this.createTexts(res, isFind);
+  }
+
   private notInFilter(method: MethodRepository, filters: Filter[]): boolean {
-    if (filters.length < 1) {
-      return true;
-    }
     let result = true;
-    filters.forEach(filter => {
-      if (method.startTime > filter.start &&
-        (method.startTime + method.duration) <= filter.finish &&
-        method.threadId === filter.threadId
-      ) { result = false; }
-    });
+    filters.filter (filter => this.isChildMethod(method, filter))
+           .map (() => result = false);
     return result;
+  }
+
+  public isChildMethod(method: MethodRepository, filter: Filter): boolean {
+    return method.startTime > filter.start &&
+          (method.startTime + method.duration) <= filter.finish &&
+           method.threadId === filter.threadId;
   }
 
   private createRect(method: MethodRepository): Rect {
     const width = this.getWidth(method.duration);
     const sourceStack = method.stack;
     const color = method.color;
-    const resultStack = new Array<String>();
-    sourceStack.forEach( stack => {
-      if (this.isShow(stack)) {
-        resultStack.push(stack + '\n');
-      }
-    });
+    const resultStack = this.splitStackForLine(sourceStack);
     return new Rect(method.id, this.X, this.Y, width, this.Y_HEIGHT, color, resultStack);
   }
 
-  private createTexts(method: MethodRepository, rect: Rect, isFind: boolean): Text {
-    const x = this.X + this.getWidth(method.duration) + 5;
-    const y = this.Y + 8;
-    const startTime = method.startTime / (this.NS_TO_COORDINATE_RATIO);
-    const duration = method.duration / (this.NS_TO_COORDINATE_RATIO);
-    const textColor = 'black';
-    const isChoosed = isFind === true ?  '+++' : '---';
-    return new Text(
-      method.id,
-      x,
-      y,
-      method.className,
-      method.methodName,
-      duration,
-      method.threadId,
-      method.threadName,
-      startTime ,
-      textColor,
-      method.path,
-      isChoosed
-    );
+  private splitStackForLine(sourceStack: String[]): Array<String> {
+    const result = new Array<String>();
+    sourceStack.filter(stack => this.isShow(stack))
+               .map(stack => result.push(stack + '\n'));
+    return result;
   }
 
   private isShow(stack) {
@@ -168,5 +148,28 @@ export class Service {
   private getWidth(duration: number): number {
     const width = duration * 100 / this.NS_TO_COORDINATE_RATIO;
     return width < 10 ? 10 : width;
+  }
+
+  private createTexts(method: MethodRepository, isFind: boolean): Text {
+    const x = this.X + this.getWidth(method.duration) + 5;
+    const y = this.Y + 8;
+    const startTime = method.startTime / (this.NS_TO_COORDINATE_RATIO);
+    const duration = method.duration / (this.NS_TO_COORDINATE_RATIO);
+    const textColor = 'black';
+    const isChoose = isFind === true ?  '+++' : '---';
+    return new Text(
+      method.id,
+      x,
+      y,
+      method.className,
+      method.methodName,
+      duration,
+      method.threadId,
+      method.threadName,
+      startTime ,
+      textColor,
+      method.path,
+      isChoose
+    );
   }
 }

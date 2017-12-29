@@ -35,19 +35,15 @@ export class AppComponent {
 
   toggle(event: Event, rect: Rect) {
     event.preventDefault();
-    const isContain = this.choose.find( res => {
-        return res.id === rect.id;
-      }
-    );
+    const isContain = this.choose.find( res => res.id === rect.id );
     if (isContain) {
-      for (let i = 0; i < this.choose.length; i++) {
-        if (this.choose[i].id === rect.id) {
-          const removed = this.choose.filter(item => item.id !== rect.id );
-          this.choose = removed;
-          this.setView(this.choose);
-        }
-      }
-    } else {
+      this.choose.filter(res => res.id === rect.id)
+                 .map(() => {
+                   const removed = this.choose.filter(item => item.id !== rect.id );
+                   this.choose = removed;
+                   this.setView(removed);
+                 });
+      } else {
       this.choose.push(rect);
       this.setView(this.choose);
     }
