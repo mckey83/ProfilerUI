@@ -6,6 +6,7 @@ import {Observable} from 'rxjs/Observable';
 import { Diagram } from './shared/model/service/diagram';
 
 
+
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
@@ -15,14 +16,15 @@ import { Diagram } from './shared/model/service/diagram';
 export class AppComponent {
   private methods: Array<Rect> = [];
   private texts: Array<Text> = [];
-  private choose: Array<Rect> = [];
+  private toggled: Array<Rect> = [];
+
 
   constructor(private service: Service) {
-    this.update();
+    this.showAll();
   }
 
-  private update() {
-    this.setView([]);
+  private showAll() {
+    this.update([]);
   }
 
   public getHeight(): number {
@@ -33,24 +35,28 @@ export class AppComponent {
     return (this.methods[this.methods.length - 2]).x + 2000;
   }
 
-  toggle(event: Event, rect: Rect) {
+  toggle(event: Event, toggle: Rect) {
     event.preventDefault();
-    const isContain = this.choose.find( res => res.id === rect.id );
-    if (isContain) {
-      this.choose.filter(res => res.id === rect.id)
-                 .map(() => {
-                   const removed = this.choose.filter(item => item.id !== rect.id );
-                   this.choose = removed;
-                   this.setView(removed);
-                 });
-      } else {
-      this.choose.push(rect);
-      this.setView(this.choose);
+
+    const isToggled = this.toggled.find( res => res.id === toggle.id );
+    if (isToggled) {
+      this.setUnToggled(toggle);
+    } else {
+      this.setToggled(toggle);
     }
+    this.update(this.toggled);
   }
 
-  private setView(filter: Rect[]) {
-    this.service.getWithParameter(filter).subscribe( diagram => {
+  private setUnToggled(toggled: Rect) {
+    this.toggled = this.toggled.filter(item => item.id !== toggled.id);
+  }
+
+  private setToggled(toggle: Rect) {
+    this.toggled.push(toggle);
+  }
+
+  private update(hidden: Rect[]) {
+    this.service.getWithout(hidden).subscribe(diagram => {
         this.methods = diagram.methods;
         this.texts = diagram.texts;
       }
