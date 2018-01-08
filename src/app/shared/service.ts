@@ -23,17 +23,17 @@ export class Service {
     this.modelRepository = this.repository.getData();
   }
 
-  public getWithParameter(choose: Array<Rect>): Observable<Diagram> {
+  public getWithout(hidden: Array<Rect>): Observable<Diagram> {
     this.Y = 0;
-    return this.update(choose);
+    return this.update(hidden);
   }
 
-  private update(choose: Array<Rect>): Observable<Diagram> {
+  private update(hidden: Array<Rect>): Observable<Diagram> {
     return this.modelRepository
       .map(res => res.method)
       .map(methods => {
-          const filters = this.getFilters(choose, methods);
-          return this.computeDataForDiagram(methods, filters);
+          const filterHidden = this.getFilters(hidden, methods);
+          return this.computeDataForDiagram(methods, filterHidden);
         }
       );
   }
