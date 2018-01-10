@@ -8,7 +8,7 @@ import { Service } from './shared/service';
 
 @NgModule({
   declarations: [AppComponent],
-  imports:      [ BrowserModule, HttpModule ],
+  imports:      [BrowserModule, HttpModule ],
   providers:    [Repository, Service],
   bootstrap:    [AppComponent]
 })
