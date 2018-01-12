@@ -4,18 +4,20 @@ h1 {
   font-size: 250%;
 }
 
-#rect {
-  fill:forestgreen;
-  stroke:forestgreen;
+.rect {
+  stroke: grey;
   stroke-width:1;
-  fill-opacity:0.4;
-  stroke-opacity:1;
-  rx:4;
-  ry:4;
+  fill-opacity:0.6;
+  stroke-opacity:0.8;
+  rx:2;
+  ry:2;
 }
 
-#text {
-  fill: black;
+.text {
   font-family: Verdana;
   font-size: 8px;
+}
+
+.outbox_div {
+  border: 1px solid lightgreen;
 }

@@ -1,48 +1,94 @@
 import { Rect } from './model/service/rect';
 import { Text } from './model/service/text';
-import { Dto } from './model/repository/dto';
-import { Diagram } from './model/controller/diagram';
-import { Method } from './model/service/method';
+import { ModelRepository } from './model/repository/model-repository';
+import { Diagram } from './model/service/diagram';
 import { Repository } from './repository/repository';
-import { Injectable }     from '@angular/core';
-
+import { Injectable } from '@angular/core';
+import { MethodRepository } from './model/repository/method-repository';
+import { Observable } from 'rxjs/Observable';
+import { Filter } from './model/service/Filter';
 
 
 @Injectable()
 export class Service {
-    rects = new Array<Rect>();
-    texts = new Array<Text>();
-    borders =  new Array<Rect>();
+  private Y_SHIFT = 15;
+  private Y_HEIGHT = 10;
+  private Y = 0;
+  private X = 0;
+  private NS_TO_COORDINATE_RATIO = 10000000000;
+  private modelRepository: Observable<ModelRepository>;
 
-    constructor (private repository:Repository){
-        repository.getData().subscribe(dto => {
-            this.createRects(dto);
-            this.createTexts(dto);
-            this.createBorder(dto);
-        });
-    }
+  constructor (private repository: Repository) {
+    this.modelRepository = this.repository.getData();
+  }
 
-    public get(): Diagram{
-        return new Diagram(this.rects, this.texts, this.borders);
-    }
+  public getWithoutHidden(hidden: Array<Rect>): Observable<Diagram> {
+    return this.modelRepository
+      .map(res => res.method)
+      .map(methods => {
+          const filters = this.getFilters(hidden, methods);
+          const rects = this.getRects(methods, filters);
+          const texts = this.getTexts(methods, filters);
+          return new Diagram(rects, texts);
+        }
+      );
+  }
 
-    private createRects(dto:Dto): void {
-        dto.method.forEach(res => {
-            let method:Method = res;
-        this.rects.push(new Rect(method.rect.x, method.rect.y, method.rect.width, method.rect.height));
-        });
-    }
+  private getFilters(choose: Array<Rect>, methods): Filter[] {
+    return choose.map( res => {
+      const found = methods.find(x => x.id === res.id);
+      const start = found.startTime;
+      const finish = found.startTime + found.duration;
+      const threadId = found.threadId;
+      return new Filter(start, finish, threadId, res.id);
+    });
+  }
 
-    private createTexts(dto:Dto): void {
-        dto.method.forEach(res => {
-            let method:Method = res;
-        let x = method.rect.x + method.rect.width + 5;
-        let y = method.rect.y + method.rect.height / 2 + 3;
-        this.texts.push(new Text(x, y, method.className, method.methodName, method.duration));
-        });
-    }
+  private getRects(methods: MethodRepository[], filters: Array<Filter>): Rect[] {
+    this.setCoordinateToDefault();
+    return methods.filter(method => this.isNotInFilter(method, filters))
+                  .map(method => {
+                      this.setX(method);
+                      this.setY();
+                      return new Rect(method, this.X, this.Y, this.Y_HEIGHT, this.NS_TO_COORDINATE_RATIO);
+                    }
+                  );
+  }
 
-    private createBorder(dto:Dto): void {
-        this.borders.push(new Rect(10, dto.background.y, 10, 10));
-    }
+  private getTexts(methods: MethodRepository[], filters: Array<Filter>): Text[] {
+    this.setCoordinateToDefault();
+    return methods
+      .filter(method => this.isNotInFilter(method, filters))
+      .map(method => {
+          this.setX(method);
+          this.setY();
+          return new Text(method, this.X, this.Y, filters, this.NS_TO_COORDINATE_RATIO);
+        }
+      );
+  }
+
+  private setCoordinateToDefault(): void {
+    this.X = 0;
+    this.Y = 0;
+  }
+
+  private isNotInFilter(method: MethodRepository, filters: Filter[]): boolean {
+    const findInFilter = filters.filter(filter => this.isChildMethod(method, filter));
+    return findInFilter.length === 0;
+  }
+
+  private isChildMethod(method: MethodRepository, filter: Filter): boolean {
+    return method.startTime > filter.start &&
+      (method.startTime + method.duration) <= filter.finish &&
+      method.threadId === filter.threadId;
+  }
+
+  private setY(): void {
+    this.Y += this.Y_SHIFT;
+  }
+
+  private setX(res: MethodRepository): void {
+    this.X = res.startTime * 60 / this.NS_TO_COORDINATE_RATIO;
+  }
+
 }
