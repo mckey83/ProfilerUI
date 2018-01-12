@@ -87,7 +87,7 @@ export class Service {
   }
 
   private setX(res: MethodRepository): void {
-    this.X = res.startTime / this.NS_TO_COORDINATE_RATIO;
+    this.X = res.startTime * 60 / this.NS_TO_COORDINATE_RATIO;
   }
 
 }

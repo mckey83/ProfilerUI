@@ -17,7 +17,7 @@ export class Repository {
   private result: ModelRepository;
 
   constructor(private http: Http) {
-    this.modelRepository = this.http.get('http://localhost:4200/assets/file.json').map(res => res.json());
+    this.modelRepository = this.http.get('http://172.22.90.194:4200/assets/file.json').map(res => res.json());
   }
 
   public getData(): Observable<ModelRepository> {
