@@ -57,13 +57,14 @@ export class Service {
 
   private getTexts(methods: MethodRepository[], filters: Array<Filter>): Text[] {
     this.setCoordinateToDefault();
-    return methods.filter(method => this.isNotInFilter(method, filters))
-                  .map(method => {
-                      this.setX(method);
-                      this.setY();
-                      return new Text(method, this.X, this.Y, filters, this.NS_TO_COORDINATE_RATIO);
-                    }
-                  );
+    return methods
+      .filter(method => this.isNotInFilter(method, filters))
+      .map(method => {
+          this.setX(method);
+          this.setY();
+          return new Text(method, this.X, this.Y, filters, this.NS_TO_COORDINATE_RATIO);
+        }
+      );
   }
 
   private setCoordinateToDefault(): void {
